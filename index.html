@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AIR SPACE 戰情室 2026-07-03 ⚠️</title>
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/recharts@2.12.7/umd/Recharts.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+<style>
+  html,body{margin:0;padding:0;background:#0F0F1A;color:#F8FAFC;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif}
+  #app{min-height:100vh;display:none}
+  #err{position:fixed;top:0;left:0;right:0;background:#7f1d1d;color:#fff;padding:12px 16px;font:12px/1.5 monospace;white-space:pre-wrap;z-index:9999;display:none;max-height:50vh;overflow:auto}
+  #gate{position:fixed;inset:0;background:#0F0F1A;display:flex;align-items:center;justify-content:center;z-index:10000;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif}
+  #gate-box{width:280px;text-align:center}
+  #gate-box h1{font-size:16px;font-weight:600;color:#F8FAFC;margin:0 0 18px}
+  #gate-box input{width:100%;box-sizing:border-box;padding:10px 12px;font-size:15px;border-radius:8px;border:1px solid #2A2A3D;background:#181828;color:#F8FAFC;outline:none;text-align:center;letter-spacing:2px}
+  #gate-box input:focus{border-color:#3B82F6}
+  #gate-box button{margin-top:10px;width:100%;padding:10px 12px;font-size:14px;font-weight:600;border-radius:8px;border:none;background:#3B82F6;color:#fff;cursor:pointer}
+  #gate-box button:hover{background:#2563EB}
+  #gate-err{color:#F87171;font-size:12px;margin-top:8px;min-height:16px}
+</style>
+</head>
+<body>
+<div id="gate">
+  <div id="gate-box">
+    <h1>AIR SPACE 戰情室｜請輸入密碼</h1>
+    <input type="password" id="gate-pw" placeholder="密碼" autofocus>
+    <button id="gate-btn">進入</button>
+    <div id="gate-err"></div>
+  </div>
+</div>
+<div id="err"></div>
+<div id="app"></div>
+<script>
+(function(){
+  var PW_HASH = '0348606cfca0c5eeff038e34dc7908fe6e9b71a0'; // sha1("airspace-salt" + password)
+  function sha1(msg){
+    function rotl(n,s){return (n<<s)|(n>>>(32-s));}
+    var msgBytes = unescape(encodeURIComponent(msg));
+    var msgLen = msgBytes.length;
+    var wordArray = [];
+    for(var i=0;i<msgLen;i++){
+      wordArray[i>>2] |= msgBytes.charCodeAt(i) << (24-(i%4)*8);
+    }
+    wordArray[msgLen>>2] |= 0x80 << (24-(msgLen%4)*8);
+    wordArray[(((msgLen+8)>>6)+1)*16-1] = msgLen*8;
+    var H0=0x67452301,H1=0xEFCDAB89,H2=0x98BADCFE,H3=0x10325476,H4=0xC3D2E1F0;
+    for(var blockStart=0;blockStart<wordArray.length;blockStart+=16){
+      var w=wordArray.slice(blockStart,blockStart+16);
+      for(var t=16;t<80;t++){
+        w[t]=rotl(w[t-3]^w[t-8]^w[t-14]^w[t-16],1);
+      }
+      var a=H0,b=H1,c=H2,d=H3,e=H4;
+      for(t=0;t<80;t++){
+        var f,k;
+        if(t<20){f=(b&c)|((~b)&d);k=0x5A827999;}
+        else if(t<40){f=b^c^d;k=0x6ED9EBA1;}
+        else if(t<60){f=(b&c)|(b&d)|(c&d);k=0x8F1BBCDC;}
+        else{f=b^c^d;k=0xCA62C1D6;}
+        var temp=(rotl(a,5)+f+e+k+(w[t]|0))|0;
+        e=d;d=c;c=rotl(b,30);b=a;a=temp;
+      }
+      H0=(H0+a)|0;H1=(H1+b)|0;H2=(H2+c)|0;H3=(H3+d)|0;H4=(H4+e)|0;
+    }
+    function toHex(n){return (n>>>0).toString(16).padStart(8,'0');}
+    return toHex(H0)+toHex(H1)+toHex(H2)+toHex(H3)+toHex(H4);
+  }
+  function unlock(){
+    document.getElementById('gate').style.display='none';
+    document.getElementById('app').style.display='block';
+    try{ sessionStorage.setItem('airspace_auth','1'); }catch(e){}
+  }
+  try{
+    if(sessionStorage.getItem('airspace_auth')==='1'){ unlock(); }
+  }catch(e){}
+  function tryPw(){
+    var val = document.getElementById('gate-pw').value;
+    if(sha1('airspace-salt'+val) === PW_HASH){
+      unlock();
+    } else {
+      document.getElementById('gate-err').textContent = '密碼錯誤，請再試一次';
+      document.getElementById('gate-pw').value='';
+      document.getElementById('gate-pw').focus();
+    }
+  }
+  document.getElementById('gate-btn').addEventListener('click', tryPw);
+  document.getElementById('gate-pw').addEventListener('keydown', function(ev){
+    if(ev.key === 'Enter') tryPw();
+  });
+})();
+(function(){
+  function showErr(msg){
+    var e = document.getElementById('err');
+    if(!e) return;
+    e.style.display='block';
+    e.textContent = (e.textContent ? e.textContent + '\n\n' : '') + msg;
+  }
+  window.addEventListener('error', function(ev){
+    showErr('JS ERROR: ' + ev.message + '\n  at ' + (ev.filename||'?') + ':' + (ev.lineno||'?') + ':' + (ev.colno||'?') + (ev.error && ev.error.stack ? '\n' + ev.error.stack : ''));
+  });
+  window.addEventListener('unhandledrejection', function(ev){
+    showErr('PROMISE REJ: ' + (ev.reason && ev.reason.message ? ev.reason.message : String(ev.reason)));
+  });
+  window.addEventListener('load', function(){
+    setTimeout(function(){
+      var lib = [];
+      if(typeof React === 'undefined') lib.push('React');
+      if(typeof ReactDOM === 'undefined') lib.push('ReactDOM');
+      if(typeof Recharts === 'undefined') lib.push('Recharts');
+      if(typeof Babel === 'undefined') lib.push('Babel');
+      if(lib.length) showErr('LIBS NOT LOADED: ' + lib.join(', ') + ' (CDN blocked?)');
+      var app = document.getElementById('app');
+      if(app && app.children.length === 0 && lib.length === 0) {
+        showErr('LIBS OK but #app empty — Babel may not have run text/babel block. Open DevTools console.');
+      }
+    }, 2500);
+  });
+})();
+</script>
+<script type="text/babel" data-presets="react">
+try {
+const { useState } = React;
+const { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } = Recharts;
+
+/* ====== DATA_BLOCK_START — replaced each run ====== */
+var MONTHS={
+
+"2026-04":{label:"2026年4月",days:30,DE:30,note:"FINAL 收官｜廣告截至 4/20(META) / 4/19(GA)",DD_WEB:[1069198,1529058,1832417,1769232,1666604,1898847,1297354,1120117,1191389,980356,1121875,1631995,1781716,1077861,951302,960981,1365669,1180795,1289603,1151055,1161992,1315496,1740006,1518985,1481103,1775088,1631822,1185034,1212141,1363783],DD_SP:[252943,230475,412672,1452061,380920,300781,226817,244407,247207,209265,242388,330899,261764,229423,242847,281132,168089,897663,259453,262674,322057,309137,309320,296666,930270,352354,321310,275360,0,514807],DD_ST:[1674355,2263438,3550418,3228254,3749336,2708260,1374560,1510572,1865307,2330913,3579999,3325006,1850944,1968797,1908812,2138191,2631928,4338157,3580385,1892977,2053722,1767676,1893381,2181902,3830137,3714208,1828577,1739245,1734479,1868035],A:{total:136001498,store:74081971,online:61919527,web:41252874,shopee:10765161,amazon:213063,rakuten:1115289,intl:1399840,my_total:7386363,my_web:3933707,my_store:3273109,my_shopee:179547,w_as:15774378,w_lady:11673614,w_aplus:7369962,w_ca:6434920,w_swim:3125512,web_tw:30777928,web_hk:9111163},T:{web:{t:43500000,y:39312199},shopee:{t:12000000,y:9396436},intl:{t:1650000,y:1865363},rakuten:{t:1100000,y:530231},amazon:{t:300000,y:0},store:{t:80866527,y:73758752},my_web:{t:4400000,y:4086008},my_store:{t:4687500,y:4129332},my_shopee:{t:200000,y:103894},all:{t:148704027,y:133182215},as:{t:18600000,y:18573338},lady:{t:11750000,y:9290025},plus:{t:6950000,y:6407401},ca:{t:6200000,y:5041435}},EVENTS:{2:["指定商品任選3件39折","全館95/2件88/3件85"],6:["HEYMAN+比基尼開賣"],7:["會員招募 SVIP VIP積點2倍送"],8:["EDM 15%OFF(回購客)"],13:["洋裝套裝15%OFF","崔弟聯名開賣"],14:["SALE 49折起"],20:["天絲牛仔/冰肌涼感"],23:["全館免運 95/2件88/3件83"],27:["奶油柔感棉/女團/BIKINI"]},ADS:[{n:"fb/ad",m:"TW",L:1253254,G:1350000,H:1295000,W:3.64,Tv:4559905,I:5180000,AC:0.88,Z:0.4661},{n:"fb/ol",m:"TW",L:654812,G:700000,H:665000,W:3.16,Tv:2072435,I:2394000,AC:0.866,Z:0.4487},{n:"fb/aplus",m:"TW",L:637483,G:660000,H:640000,W:3.68,Tv:2346730,I:2560000,AC:0.917,Z:0.4245},{n:"fb/hk",m:"TW",L:662262,G:650000,H:700000,W:3.48,Tv:2303568,I:2415000,AC:0.954,Z:0.3843},{n:"fb/ca",m:"TW",L:304092,G:270000,H:320000,W:3.01,Tv:915416,I:960000,AC:0.954,Z:0.4451},{n:"fb/ate",m:"TW",L:36500,G:45000,H:35000,W:3.66,Tv:133589,I:136500,AC:0.979,Z:0.3229},{n:"fb/my",m:"MY",L:514259,G:550000,H:550000,W:2.6,Tv:1337773,I:1760000,AC:0.76,Z:0.4253},{n:"fb/gl",m:"GL",L:203848,G:202000,H:222000,W:1.76,Tv:358353,I:377400,AC:0.95,Z:0.7319},{n:"google/tw",m:"TW",L:315734,G:335000,H:345000,W:4.45,Tv:1404917,I:1552500,AC:0.905,Z:0},{n:"google/hk",m:"TW",L:194612,G:200000,H:230000,W:3.88,Tv:754381,I:851000,AC:0.886,Z:0},{n:"google/my",m:"MY",L:70938,G:90000,H:90000,W:3.63,Tv:257478,I:342000,AC:0.753,Z:0.5336},{n:"google/gl",m:"GL",L:92913,G:120000,H:100000,W:2.67,Tv:247973,I:300000,AC:0.827,Z:0.396},{n:"line/as",m:"TW",L:248093,G:260000,H:260000,W:14.92,Tv:3702613,I:4160000,AC:0.89,Z:0.1941},{n:"line/ad",m:"TW",L:358603,G:350000,H:380000,W:3.15,Tv:1129707,I:1216000,AC:0.929,Z:0.3745},{n:"rtbhouse",m:"TW",L:116021,G:160000,H:125000,W:3.82,Tv:443531,I:512500,AC:0.865,Z:0.1686},{n:"criteo",m:"TW",L:21879,G:32000,H:22000,W:3.28,Tv:71745,I:77000,AC:0.932,Z:0.2451},{n:"EDM",m:"TW",L:50000,G:70000,H:70000,W:10.39,Tv:519372,I:630000,AC:0.824,Z:0.4939}],MKT:[{n:"TW",rev:46518630,tgtRev:55754600,roas:4.2,ac:0.834},{n:"MY",rev:1595251,tgtRev:2102000,roas:2.73,ac:0.759},{n:"GL",rev:606326,tgtRev:677400,roas:2.04,ac:0.895}],insights:[{c:"#F59E0B",t:"4月全通路 91.46% (1.36億/1.49億) 收官",b:"全通路實績 136,001,498 元，距目標 148,704,027 缺口 1,270 萬。台灣官網 94.83% 領跑、台灣門市 91.61% 接近達標；蝦皮 89.71%、國際站 84.84%、馬來通路 79.5% 為主要拉低點。"},{c:"#10B981",t:"達標渠道：樂天 101.4%、PLUS 106.0%、CA 103.8%",b:"樂天 1,115,289/1,100,000 微幅達標；A+ 7,369,962/6,950,000、CA 6,434,920/6,200,000 雙雙超標。LADY 99.35% 差 76,386 元功虧一簣。"},{c:"#EF4444",t:"馬來門市 69.83% 與 Amazon 71.0% 收尾大破口",b:"馬來門市 3,273,109/4,687,500 缺口 141 萬，連續落後；Amazon 213,063/300,000 缺口 87K 但量級小。"},{c:"#10B981",t:"廣告 ROAS 收尾 TW 4.20 / MY 2.73 / GL 2.04",b:"TW 4 條達標 95%+；LINE/AS ROAS 14.92 全頻道之冠，建議 5 月加碼預算 26萬→40萬(+54%)。"},{c:"#3B82F6",t:"5月關鍵：母親節檔期 + 蝦皮回血",b:"5月目標 1.65 億；門市 8,793 萬、蝦皮 1,200 萬。需靠 5/9 母親節活動拉動 LADY/PLUS。"}]},
+"2026-05":{"label":"2026年5月","days":31,"DE":31,"note":"FINAL 收官 5/31｜官網 47,221,916 / 馬來 9,168,810 補齊","DD_WEB":[1513282,1197990,1455093,1407970,1212820,1185354,1534731,1297132,1466477,2293915,1710843,1035518,922314,976907,823807,1013732,1157262,2390006,1800173,1952361,1677476,1456143,1512780,1732155,1586656,1490547,1606160,1611666,1867814,1941014,2391818],"DD_SP":[208502,170808,310527,223256,1001110,246501,218282,229298,217276,371988,295766,211818,194719,180961,171043,243220,468606,1402402,361531,355938,304944,320852,465440,482346,1119189,250771,293019,288160,310810,329199,1729896],"DD_ST":[3915313,3804626,3196221,1452899,1365961,1844965,2076670,2558215,3796341,3742807,1967997,1612113,1417415,1693199,2455260,3651488,3517810,3462587,2974665,2549735,2491853,3119308,5090661,4502828,2457171,2152393,2188467,2444339,2786631,5320493,4513932],"A":{"total":162956362,"store":90124363,"online":72831999,"web":47221916,"shopee":12978178,"amazon":250457,"rakuten":1337401,"intl":1875237,"my_total":9168810,"my_web":4445843,"my_store":4376757,"my_shopee":346210,"w_as":15791449,"w_lady":11664837,"w_aplus":7358638,"w_ca":7079343,"w_swim":8676323,"web_tw":47221916,"web_hk":10688515},"T":{"web":{"t":51000000,"y":48336739},"shopee":{"t":12000000,"y":9258190},"intl":{"t":2100000,"y":2117858},"rakuten":{"t":1500000,"y":857611},"amazon":{"t":500000,"y":0},"store":{"t":87925781,"y":90000381},"my_web":{"t":4400000,"y":3711698},"my_store":{"t":5500000,"y":4612772},"my_shopee":{"t":200000,"y":109736},"all":{"t":165125781,"y":153181210},"as":{"t":22260000,"y":22163269},"lady":{"t":12750000,"y":11372353},"plus":{"t":8290000,"y":8063812},"ca":{"t":7700000,"y":6737305}},"EVENTS":{"5":["雙五蝦皮+官網促銷"],"9":["母親節檔期"],"18":["蝦皮 5/18 促銷"],"25":["月底蝦皮促銷衝峰"],"29":["蝦皮閃促 末週推播"],"31":["月末收官衝刺"]},"ADS":[{"n":"fb/ad","m":"TW","L":1650579,"G":1680000,"H":1650579,"W":4.54,"Tv":7500233,"I":5880000,"AC":1.276,"Z":0},{"n":"fb/ol","m":"TW","L":693442,"G":860000,"H":693442,"W":4.73,"Tv":3277950,"I":3010000,"AC":1.089,"Z":0},{"n":"fb/aplus","m":"TW","L":811696,"G":850000,"H":811696,"W":5.01,"Tv":4069413,"I":2975000,"AC":1.368,"Z":0},{"n":"fb/hk","m":"TW","L":807533,"G":850000,"H":807533,"W":5.18,"Tv":4182053,"I":2975000,"AC":1.406,"Z":0},{"n":"fb/ca","m":"TW","L":324199,"G":360000,"H":324199,"W":4.53,"Tv":1468616,"I":1260000,"AC":1.165,"Z":0},{"n":"fb/ate","m":"TW","L":42822,"G":60000,"H":42822,"W":3.52,"Tv":150733,"I":210000,"AC":0.718,"Z":0},{"n":"fb/my","m":"MY","L":640131,"G":500000,"H":640131,"W":3.13,"Tv":2004627,"I":1500000,"AC":1.336,"Z":0},{"n":"fb/gl","m":"GL","L":256291,"G":275000,"H":256291,"W":1.88,"Tv":481350,"I":412500,"AC":1.167,"Z":0},{"n":"google/tw","m":"TW","L":433287,"G":450000,"H":433287,"W":4.35,"Tv":1885015,"I":1575000,"AC":1.197,"Z":0},{"n":"google/hk","m":"TW","L":244242,"G":250000,"H":244242,"W":4.16,"Tv":1016339,"I":875000,"AC":1.162,"Z":0},{"n":"google/my","m":"MY","L":59337,"G":98000,"H":59337,"W":2.67,"Tv":158229,"I":343000,"AC":0.461,"Z":0},{"n":"line/as","m":"TW","L":269898,"G":335000,"H":269898,"W":14.01,"Tv":3781447,"I":4648000,"AC":0.814,"Z":0},{"n":"line/ad","m":"TW","L":436681,"G":400000,"H":436681,"W":3.21,"Tv":1400361,"I":1400000,"AC":1.0,"Z":0},{"n":"rtbhouse","m":"TW","L":158547,"G":160000,"H":158547,"W":3.11,"Tv":493812,"I":560000,"AC":0.882,"Z":0},{"n":"criteo","m":"TW","L":28077,"G":40000,"H":28077,"W":2.44,"Tv":68384,"I":140000,"AC":0.489,"Z":0},{"n":"EDM","m":"TW","L":31846,"G":85000,"H":31846,"W":18.99,"Tv":604892,"I":1190000,"AC":0.508,"Z":0}],"MKT":[{"n":"TW","rev":53779867,"tgtRev":55754600,"roas":4.54,"ac":0.965},{"n":"MY","rev":2162856,"tgtRev":2102000,"roas":3.13,"ac":1.029},{"n":"GL","rev":481350,"tgtRev":677400,"roas":1.88,"ac":0.711}],"insights":[{"c":"#F59E0B","t":"5月全月 98.7% (1.629億/1.651億) 收官 — 官網修正","b":"全通路 162,956,362/165,125,781 = 98.7%。台灣官網正確值 47,221,916/51,000,000 = 92.6%（含港澳 10,688,515）；馬來全通路補齊 9,168,810（MY官網 4,445,843 / MY門市 4,376,757 / MY蝦皮 346,210）。"},{"c":"#10B981","t":"台灣門市 102.5%、蝦皮 108.2%、MY 92.7%","b":"門市 90,124,363/87,925,781 = 102.5%；蝦皮 12,978,178/12,000,000 = 108.2%；馬來全通路 9,168,810/9,900,000 ≈ 92.7%（MY目標為my_web+my_store+my_shopee合計）。"},{"c":"#F59E0B","t":"官網 92.6% 修正｜原始數據有誤，Amazon 50.1%、樂天 89.2%","b":"台灣官網 47,221,916/51,000,000 = 92.6%（舊值 50,570,590 為誤植，已更正）。Amazon 250,457/500,000 = 50.1%；樂天 1,337,401/1,500,000 = 89.2%。"},{"c":"#10B981","t":"廣告 ROAS TW 4.54x / MY 3.13x — LINE/AS 14.01x 最強","b":"5月廣告：TW META 全線 4.53-5.18x；LINE/AS 14.01x；google/tw 4.35x。MY fb/my 3.13x。EDM ROAS 18.99x 但達標率僅 50.8%。"},{"c":"#3B82F6","t":"6月關鍵：父親節(6/21)、蝦皮 6/18+6/25","b":"6月目標 1.38億（預估值）。截至 6/2：全通路 885萬（2天均值 442萬/天，月推估 1.33億/目標1.38億=96.3%）。MY資料尚未回傳。"}]},
+"2026-06":{"label":"2026年6月","days":30,"DE":30,"note":"FINAL 收官 6/30，全月 98.35% (1.6434億/1.6709億)。門市 100.85%、蝦皮 108.64% 超標；官網 95.92%。⚠️ 官網子項 AS/LADY/A+/CHIC A 之 6/30 當日增量係依前29日組成比例分攤估算（非日報表直接數字），港澳(web_hk)同採比例分攤；泳裝子項全月缺數據仍記為0。","DD_WEB":[1751932,1513394,1605948,1198563,1195377,1175007,1308812,1850454,1957409,1734641,1872150,1607409,1641755,2064962,2861244,2763533,2490818,2741116,2307029,2222739,2854801,1973219,986021,931324,1038633,1044764,1148449,1302704,1352045,1302111],"DD_SP":[667310,334048,350691,322475,286624,1192992,354571,273410,270272,279802,251797,211177,241671,267826,567485,692039,543632,2208487,507580,693678,754781,331166,308277,296522,689693,164897,217576,291210,269695,282241],"DD_ST":[2092042,2217487,2090596,1989779,2452536,4532408,3951087,1899059,1835235,2143043,2274820,2765779,4863921,3914300,2190344,1987633,2352311,2709202,4507999,4495041,4219991,2045416,1910450,2148985,1928860,2646413,3921877,4069430,2290907,2243762],"A":{"total":164337005,"store":84690713,"online":79646292,"web":51798363,"shopee":14123625,"amazon":243343,"rakuten":1822512,"intl":2352688,"my_total":9305764,"my_web":4964346,"my_store":3916187,"my_shopee":440254,"w_as":15346812,"w_lady":14989443,"w_aplus":7072258,"w_ca":8031717,"w_swim":0,"web_tw":45440230,"web_hk":6358133},"T":{"web":{"t":54000000,"y":51538241},"shopee":{"t":13000000,"y":10412148},"intl":{"t":2700000,"y":2854139},"rakuten":{"t":2500000,"y":1679947},"amazon":{"t":600000,"y":0},"store":{"t":83974336,"y":84320861},"my_web":{"t":5200000,"y":4887518},"my_store":{"t":4762500,"y":4253389},"my_shopee":{"t":200000,"y":122165},"all":{"t":167086836,"y":160068408},"as":{"t":24000000,"y":23295221},"lady":{"t":12900000,"y":12449956},"plus":{"t":7900000,"y":7621387},"ca":{"t":8800000,"y":8171677}},"EVENTS":{"18":["蝦皮 6/18 促銷"],"21":["父親節檔期"],"25":["蝦皮 6/25 促銷"],"30":["月末收官衝刺"]},"ADS":[{"n":"fb/ad","m":"TW","L":408998,"G":1650000,"H":408998,"W":4.57,"Tv":1870899,"I":6352500,"AC":0.248,"Z":0},{"n":"fb/ol","m":"TW","L":202969,"G":820000,"H":202969,"W":5.22,"Tv":1058561,"I":2952000,"AC":0.248,"Z":0},{"n":"fb/aplus","m":"TW","L":212711,"G":830000,"H":212711,"W":4.68,"Tv":995721,"I":2946500,"AC":0.256,"Z":0},{"n":"fb/hk","m":"TW","L":224838,"G":950000,"H":224838,"W":5.94,"Tv":1334618,"I":3277500,"AC":0.237,"Z":0},{"n":"fb/ca","m":"TW","L":115720,"G":360000,"H":115720,"W":5.15,"Tv":595995,"I":1260000,"AC":0.321,"Z":0},{"n":"fb/ate","m":"TW","L":22175,"G":60000,"H":22175,"W":4.72,"Tv":104643,"I":0,"AC":0.37,"Z":0},{"n":"fb/my","m":"MY","L":150603,"G":630000,"H":150603,"W":3.21,"Tv":483379,"I":2110500,"AC":0.239,"Z":0},{"n":"fb/gl","m":"GL","L":91747,"G":330000,"H":91747,"W":2.05,"Tv":188027,"I":610500,"AC":0.278,"Z":0},{"n":"google/tw","m":"TW","L":119276,"G":450000,"H":119276,"W":3.0,"Tv":357579,"I":1957500,"AC":0.265,"Z":0},{"n":"google/hk","m":"TW","L":72779,"G":260000,"H":72779,"W":3.04,"Tv":221094,"I":988000,"AC":0.28,"Z":0},{"n":"google/my","m":"MY","L":28005,"G":165000,"H":28005,"W":2.13,"Tv":59675,"I":561000,"AC":0.17,"Z":0},{"n":"google/gl","m":"GL","L":55482,"G":229500,"H":55482,"W":3.18,"Tv":176555,"I":619650,"AC":0.242,"Z":0},{"n":"line/as","m":"TW","L":73541,"G":320000,"H":73541,"W":11.12,"Tv":817812,"I":4960000,"AC":0.23,"Z":0},{"n":"line/ad","m":"TW","L":140294,"G":550000,"H":140294,"W":3.88,"Tv":544955,"I":1952500,"AC":0.255,"Z":0},{"n":"rtbhouse","m":"TW","L":34209,"G":200000,"H":34209,"W":3.76,"Tv":128723,"I":820000,"AC":0.171,"Z":0},{"n":"criteo","m":"TW","L":8944,"G":44000,"H":8944,"W":2.55,"Tv":22786,"I":112000,"AC":0.203,"Z":0},{"n":"EDM","m":"TW","L":0,"G":75000,"H":0,"W":0,"Tv":165913,"I":787500,"AC":0,"Z":0}],"MKT":[{"n":"TW","rev":8219299,"tgtRev":33405100,"roas":5.02,"ac":0.246},{"n":"MY","rev":543054,"tgtRev":1942000,"roas":3.04,"ac":0.193},{"n":"GL","rev":364582,"tgtRev":956000,"roas":2.48,"ac":0.263}],"insights":[{"c":"#10B981","t":"6月收官 98.35% (1.6434億/1.6709億)｜30天資料到齊","b":"6月全月實績確認：全通路 164,337,005 / 167,086,836 = 98.35%。門市 84,690,713 (100.85%)、蝦皮 14,123,625 (108.64%) 雙雙超標；官網 51,798,363 (95.92%) 接近滿標，僅差 220萬。"},{"c":"#F59E0B","t":"Amazon 40.56%、樂天 72.90%、馬來門市 82.23% 為三大缺口通路","b":"Amazon 243,343/600,000 = 40.56%；樂天 1,822,512/2,500,000 = 72.90%；馬來門市 3,916,187/4,762,500 = 82.23%。馬來蝦皮 440,254 (220.13%) 大幅超標抵銷部分缺口。"},{"c":"#3B82F6","t":"官網支線收官：LADY 116.20% 超標、CHIC A 91.27%、A+ 89.52%；AS 63.95% 為主要缺口","b":"（AS/LADY/A+/CHIC A 6/30 當日數字為比例推算）LADY 14,989,443/12,900,000 = 116.20%；CHIC A 8,031,717/8,800,000 = 91.27%；A+ 7,072,258/7,900,000 = 89.52%；AS 15,346,812/24,000,000 = 63.95% 持續為官網最大缺口。"},{"c":"#10B981","t":"6月廣告結算：FB/HK ROAS 5.70x、FB/AS ROAS 5.19x 全頻道最佳","b":"依「每月廣告成效紀錄表」6月最終結算：FB HK ROAS 5.70x（去年同期 4.82x）、FB AS ROAS 5.19x（去年同期 4.22x）、Google TW品牌 ROAS 196.88x、LINE/AS ROAS 15.44x、rtbhouse ROAS 3.50x，全數優於去年同期。"}]},
+"2026-07":{"label":"2026年7月","days":31,"DE":3,"note":"⚠️ 2026-07-03 執行｜DE=3。台灣(官網/門市/蝦皮/亞馬遜/樂天)連續3天實績均為0，全通路日報表7月分頁TW區塊持續空白，尚待業務回報。海外馬來+國際站已計入7/1-7/3實績：馬來全通路 986,818(官網349,279/門市610,779/蝦皮+TikTok 26,760)、國際站 148,825。⚠️ 來源檔7/4~7/31欄位仍顯示樣板殘值(非當日實績,經比對與影響公式判斷為預先帶入)，未採用，待逐日確認後再補。「每月廣告成效紀錄表」尚無7月分頁，ADS/MKT暫缺。月度目標(2026目標+達成率JUL欄)：全通路1.61億、官網4,600萬、蝦皮1,000萬、門市8,544萬。","DD_WEB":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"DD_SP":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"DD_ST":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"A":{"total":1135643,"store":0,"online":0,"web":0,"shopee":0,"amazon":0,"rakuten":0,"intl":148825,"my_total":986818,"my_web":349279,"my_store":610779,"my_shopee":26760,"w_as":0,"w_lady":0,"w_aplus":0,"w_ca":0,"w_swim":0,"web_tw":0,"web_hk":0},"T":{"web":{"t":46000000,"y":42630729},"shopee":{"t":10000000,"y":9389128},"intl":{"t":4100000,"y":3816627},"rakuten":{"t":3000000,"y":2745042},"amazon":{"t":1300000,"y":0},"store":{"t":85441292,"y":0},"my_web":{"t":5100000,"y":4821893},"my_store":{"t":5362500,"y":0},"my_shopee":{"t":350000,"y":142404},"all":{"t":160953792,"y":0},"as":{"t":20400000,"y":0},"lady":{"t":11000000,"y":0},"plus":{"t":6700000,"y":0},"ca":{"t":7500000,"y":0}},"EVENTS":{"7":["蝦皮 7.7 促銷"],"25":["蝦皮 7.25 促銷"],"31":["月末收官衝刺"]},"ADS":[],"MKT":[],"insights":[{"c":"#6B7280","t":"7/1-7/3 台灣連續3天均無回報，僅海外(馬來/國際站)有進帳","b":"逐日核對確認：全通路日報表7月分頁「網路業績」欄的每日數字實際上是馬來西亞全通路+國際站的加總透傳，台灣官網/門市/蝦皮/亞馬遜/樂天連續3天(7/1-7/3)皆為0，尚待業務回報。7/4起分頁數字經比對疑似為樣板殘值，暫不採用。"},{"c":"#3B82F6","t":"海外3日累計：馬來全通路 986,818、國際站 148,825","b":"馬來官網 349,279、馬來門市 610,779、馬來蝦皮+TikTok 26,760，合計馬來全通路 986,818；國際站 148,825。台灣區塊尚無資料可比較達成率。"},{"c":"#3B82F6","t":"6月收官 98.35% (1.6434億/1.6709億)｜門市/蝦皮雙超標","b":"6月全月實績確認：全通路 164,337,005 / 167,086,836 = 98.35%。門市 100.85%、蝦皮 108.64% 超標；官網 95.92% 接近滿標。"},{"c":"#F59E0B","t":"6月缺口延續：Amazon 40.56%、樂天 72.90%、馬來門市 82.23%","b":"Amazon 243,343/600,000 = 40.56%；樂天 1,822,512/2,500,000 = 72.90%；馬來門市 3,916,187/4,762,500 = 82.23%，7月同為觀察重點。"},{"c":"#10B981","t":"6月廣告結算：FB/HK ROAS 5.70x、FB/AS ROAS 5.19x 全頻道最佳","b":"依「每月廣告成效紀錄表」6月最終結算：FB HK ROAS 5.70x（去年同期 4.82x）、FB AS ROAS 5.19x（去年同期 4.22x）、Google TW品牌 ROAS 196.88x、LINE/AS ROAS 15.44x、rtbhouse ROAS 3.50x。7月關鍵檔期：蝦皮 7.7／7.25 雙檔、夏季換季出清。"}]}
+};
+var DEFAULT_MONTH="2026-07";
+/* ====== DATA_BLOCK_END ====== */
+
+/* ====== RENDER_BLOCK_START — pure UI, do not regenerate ====== */
+function fmt(n){if(n==null||isNaN(Number(n)))return"-";var v=Number(n);if(v>=1e8)return(v/1e8).toFixed(2)+"億";if(v>=1e4)return Math.round(v/1e4)+"萬";return String(Math.round(v));}
+function pct(n){return(n*100).toFixed(1)+"%";}
+function rpct(a,t){return t>0?pct(a/t):"-";}
+function rc(r){return r>=0.6?"#10B981":r>=0.4?"#F59E0B":"#EF4444";}
+
+function monthPrefix(key){var p=String(key||"").split("-");return p.length===2?String(Number(p[1]))+"/":"";}
+function monthLabelShort(key){var p=String(key||"").split("-");return p.length===2?p[0]+"年"+Number(p[1])+"月":key;}
+
+function Card(p){
+  var rate=p.target>0?p.actual/p.target:0;
+  var proj=p.de>0?(p.actual/p.de)*p.days:0;
+  var projR=p.target>0?proj/p.target:0;
+  var yoyP=p.yoy>0&&p.de>0?((p.actual/(p.yoy*p.de/p.days))-1)*100:null;
+  var sm=p.small;
+  return(<div style={{background:"#1E1E2E",borderRadius:12,padding:sm?"12px 16px":"16px 20px",border:"1px solid #2A2A3E",position:"relative",overflow:"hidden"}}>
+    <div style={{position:"absolute",top:0,left:0,width:Math.min(rate*100,100)+"%",height:3,background:p.color}}/>
+    <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+      <span style={{color:"#94A3B8",fontSize:sm?11:13,fontWeight:600}}>{p.label}</span>
+      <span style={{color:rc(rate),fontSize:sm?12:14,fontWeight:700}}>{pct(rate)}</span>
+    </div>
+    <div style={{fontSize:sm?18:24,fontWeight:800,color:"#F8FAFC"}}>{fmt(p.actual)}</div>
+    <div style={{color:"#64748B",fontSize:sm?10:12,marginTop:2}}>{"目標 "+fmt(p.target)}</div>
+    <div style={{display:"flex",gap:14,marginTop:8,fontSize:sm?10:11}}>
+      <span style={{color:projR>=0.85?"#10B981":"#F59E0B"}}>{"推估 "+fmt(Math.round(proj))}</span>
+      {yoyP!==null&&<span style={{color:yoyP>=0?"#10B981":"#EF4444"}}>{"YOY "+(yoyP>=0?"+":"")+yoyP.toFixed(1)+"%"}</span>}
+    </div>
+  </div>);
+}
+
+function ETip(props){
+  if(!props.active||!props.payload||!props.payload.length)return null;
+  var label=String(props.label||"");
+  var dayNum=Number(label.split("/")[1]||"0");
+  var evts=(props.events||{})[dayNum]||(props.events||{})[String(dayNum)]||[];
+  return(<div style={{background:"#1E1E2E",border:"1px solid #3B82F6",borderRadius:8,padding:"10px 14px",fontSize:12,color:"#fff",maxWidth:280}}>
+    <div style={{fontWeight:700,marginBottom:4}}>{label}</div>
+    {props.payload.map(function(pp,i){return <div key={i} style={{color:pp.color}}>{pp.name+": "+pp.value+"萬"}</div>;})}
+    {evts.length>0&&<div style={{borderTop:"1px solid #334155",marginTop:6,paddingTop:6}}>
+      <div style={{color:"#F59E0B",fontSize:10,fontWeight:700}}>活動:</div>
+      {evts.map(function(e,i){return <div key={i} style={{color:"#94A3B8",fontSize:10}}>{"- "+e}</div>;})}
+    </div>}
+  </div>);
+}
+
+function Dashboard(){
+  const monthKeys = Object.keys(MONTHS).sort();
+  const[tab,setTab]=useState("overview");
+  const[monthKey,setMonthKey]=useState(DEFAULT_MONTH);
+  const M = MONTHS[monthKey] || MONTHS[DEFAULT_MONTH];
+  const DE = M.DE;
+  const DAYS = M.days;
+  const DD_WEB = M.DD_WEB || [];
+  const DD_SP = M.DD_SP || [];
+  const DD_ST = M.DD_ST || [];
+  const A = M.A || {};
+  const T = M.T || {};
+  const EVENTS = M.EVENTS || {};
+  const ADS = M.ADS || [];
+  const MKT = M.MKT || [];
+  const INSIGHTS = M.insights || [];
+  const WEB_ANALYTICS = M.WEB_ANALYTICS || null;
+  const PREFIX = monthPrefix(monthKey);
+  const MLBL = monthLabelShort(monthKey);
+  var webAs=(A.web||0)-(A.w_lady||0)-(A.w_aplus||0)-(A.w_ca||0);
+  var chart=DD_WEB.map(function(w,i){return{day:PREFIX+(i+1),web:Math.round((w||0)/1e4),shopee:Math.round((DD_SP[i]||0)/1e4),store:Math.round((DD_ST[i]||0)/1e4)};});
+  var monthOptions = monthKeys.map(function(k){return {k:k,l:MONTHS[k].label||k};});
+  return(
+    <div style={{background:"#0F0F1A",minHeight:"100vh",color:"#F8FAFC",fontFamily:"system-ui,sans-serif"}}>
+      <div style={{background:"linear-gradient(135deg,#1a1a2e,#16213e)",padding:"16px 24px 14px",borderBottom:"1px solid #2A2A3E"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12}}>
+          <div>
+            <div style={{fontSize:22,fontWeight:900}}><span style={{color:"#60A5FA"}}>AIR SPACE</span><span style={{color:"#475569",fontWeight:400,marginLeft:8}}>戰情室</span></div>
+            <div style={{color:"#64748B",fontSize:11,marginTop:4}}>{MLBL+" ｜ 日報截至 "+PREFIX+DE+(M.note?(" ｜ "+M.note):"")}</div>
+          </div>
+          <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:8}}>
+            <select value={monthKey} onChange={function(e){setMonthKey(e.target.value);}} style={{background:"#1E1E2E",color:"#F8FAFC",border:"1px solid #3B82F6",borderRadius:8,padding:"6px 10px",fontSize:13,fontWeight:600,cursor:"pointer"}}>
+              {monthOptions.map(function(o){return <option key={o.k} value={o.k}>{o.l}</option>;})}
+            </select>
+            <div style={{textAlign:"right"}}>
+              <div style={{fontSize:28,fontWeight:900}}>{pct(DE/DAYS)}</div>
+              <div style={{color:"#64748B",fontSize:10}}>{DE+"/"+DAYS+"天"}</div>
+            </div>
+          </div>
+        </div>
+        <div style={{display:"flex",gap:6,marginTop:12,flexWrap:"wrap"}}>
+          {[["overview","營收總覽"],["ads","廣告效率"],["insights","優化建議"],["ga4","GA4 優化分析"]].map(function(p){
+            return <button key={p[0]} onClick={function(){setTab(p[0]);}} style={{padding:"8px 18px",borderRadius:8,border:"none",cursor:"pointer",fontSize:13,fontWeight:600,background:tab===p[0]?"#3B82F6":"rgba(59,130,246,0.08)",color:tab===p[0]?"#fff":"#64748B"}}>{p[1]}</button>;
+          })}
+        </div>
+      </div>
+      <div style={{padding:"16px 24px"}}>
+      {tab==="overview"&&<div>
+        <div style={{background:"linear-gradient(135deg,#1e293b,#0f172a)",borderRadius:14,padding:"16px 22px",border:"1px solid #334155",marginBottom:14}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div>
+              <div style={{color:"#94A3B8",fontSize:11,fontWeight:600,marginBottom:4}}>{"全通路營收（截至 "+PREFIX+DE+"）"}</div>
+              <div style={{fontSize:28,fontWeight:900}}>{fmt(A.total)}</div>
+              <div style={{color:"#64748B",fontSize:11}}>{"目標 "+fmt(T.all&&T.all.t)+" | 推估 "+fmt(Math.round((A.total||0)/Math.max(DE,1)*DAYS))+" | 去年同期 "+fmt(T.all&&T.all.y)}</div>
+            </div>
+            <div style={{fontSize:26,fontWeight:800,color:rc((A.total||0)/Math.max((T.all&&T.all.t)||1,1))}}>{rpct(A.total||0,(T.all&&T.all.t)||0)}</div>
+          </div>
+        </div>
+        <div style={{color:"#475569",fontSize:10,fontWeight:700,letterSpacing:1,marginBottom:6}}>台灣通路</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:12}}>
+          <Card label="台灣官網" actual={A.web} target={T.web&&T.web.t} yoy={T.web&&T.web.y} color="#3B82F6" de={DE} days={DAYS}/>
+          <Card label="台灣蝦皮" actual={A.shopee} target={T.shopee&&T.shopee.t} yoy={T.shopee&&T.shopee.y} color="#F97316" de={DE} days={DAYS}/>
+          <Card label="台灣門市" actual={A.store} target={T.store&&T.store.t} yoy={T.store&&T.store.y} color="#EC4899" de={DE} days={DAYS}/>
+          <Card label="國際站" actual={A.intl} target={T.intl&&T.intl.t} yoy={T.intl&&T.intl.y} color="#8B5CF6" de={DE} days={DAYS}/>
+          <Card label="樂天" actual={A.rakuten} target={T.rakuten&&T.rakuten.t} yoy={T.rakuten&&T.rakuten.y} color="#10B981" de={DE} days={DAYS}/>
+          <Card label="Amazon" actual={A.amazon} target={T.amazon&&T.amazon.t} yoy={0} color="#EF4444" de={DE} days={DAYS}/>
+        </div>
+        <div style={{color:"#475569",fontSize:10,fontWeight:700,letterSpacing:1,marginBottom:6}}>馬來西亞</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:16}}>
+          <Card label="馬來官網" actual={A.my_web} target={T.my_web&&T.my_web.t} yoy={T.my_web&&T.my_web.y} color="#06B6D4" small de={DE} days={DAYS}/>
+          <Card label="馬來門市" actual={A.my_store} target={T.my_store&&T.my_store.t} yoy={T.my_store&&T.my_store.y} color="#14B8A6" small de={DE} days={DAYS}/>
+          <Card label="馬來蝦皮" actual={A.my_shopee} target={T.my_shopee&&T.my_shopee.t} yoy={T.my_shopee&&T.my_shopee.y} color="#0EA5E9" small de={DE} days={DAYS}/>
+        </div>
+        <div style={{background:"#1E1E2E",borderRadius:12,padding:"16px 20px",border:"1px solid #2A2A3E",marginBottom:14}}>
+          <div style={{fontSize:14,fontWeight:700,color:"#94A3B8",marginBottom:12}}>每日營收趨勢（萬元）- hover查看活動</div>
+          <ResponsiveContainer width="100%" height={240}>
+            <BarChart data={chart} barGap={1}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#2A2A3E"/>
+              <XAxis dataKey="day" tick={{fontSize:9,fill:"#64748B"}}/>
+              <YAxis tick={{fontSize:9,fill:"#64748B"}}/>
+              <Tooltip content={function(props){return <ETip {...props} events={EVENTS}/>;}}/>
+              <Legend wrapperStyle={{fontSize:10}}/>
+              <Bar dataKey="store" name="門市" fill="#EC4899" radius={[2,2,0,0]}/>
+              <Bar dataKey="web" name="官網" fill="#3B82F6" radius={[2,2,0,0]}/>
+              <Bar dataKey="shopee" name="蝦皮" fill="#F97316" radius={[2,2,0,0]}/>
+            </BarChart>
+          </ResponsiveContainer>
+          <div style={{marginTop:8,display:"flex",gap:3,flexWrap:"wrap"}}>
+            {Object.keys(EVENTS).map(function(d){return <div key={d} style={{background:"#2A2A3E",borderRadius:5,padding:"3px 7px",fontSize:8,color:"#F59E0B",border:"1px solid #334155"}}>{PREFIX+d+" "+(EVENTS[d][0]||"")}</div>;})}
+          </div>
+        </div>
+        <div style={{background:"#1E1E2E",borderRadius:12,padding:"16px 20px",border:"1px solid #2A2A3E"}}>
+          <div style={{fontSize:14,fontWeight:700,color:"#94A3B8",marginBottom:10}}>{"台灣官網 支線別達成（截至 "+PREFIX+DE+"）"}</div>
+          <div style={{display:"grid",gridTemplateColumns:"55px 1fr 65px 65px 48px 65px 48px",gap:3,padding:"5px 0",borderBottom:"2px solid #2A2A3E",fontSize:9,color:"#475569",fontWeight:700}}>
+            <span>支線</span><span>進度</span><span style={{textAlign:"right"}}>實績</span><span style={{textAlign:"right"}}>目標</span><span style={{textAlign:"right"}}>達成</span><span style={{textAlign:"right"}}>同期</span><span style={{textAlign:"right"}}>YOY</span>
+          </div>
+          {[{n:"AS",a:webAs,t:(T.as&&T.as.t)||0,y:(T.as&&T.as.y)||0},{n:"LADY",a:A.w_lady,t:(T.lady&&T.lady.t)||0,y:(T.lady&&T.lady.y)||0},{n:"PLUS",a:A.w_aplus,t:(T.plus&&T.plus.t)||0,y:(T.plus&&T.plus.y)||0},{n:"CHIC.A",a:A.w_ca,t:(T.ca&&T.ca.t)||0,y:(T.ca&&T.ca.y)||0},{n:"泳裝",a:A.w_swim,t:0,y:0}].map(function(row){
+            var rate=row.t>0?row.a/row.t:0;
+            var yoyP=row.y>0?((row.a/(row.y*DE/DAYS))-1)*100:null;
+            return(<div key={row.n} style={{display:"grid",gridTemplateColumns:"55px 1fr 65px 65px 48px 65px 48px",gap:3,padding:"5px 0",borderBottom:"1px solid #1a1a2e",fontSize:11,alignItems:"center"}}>
+              <span style={{color:"#CBD5E1",fontWeight:700}}>{row.n}</span>
+              <div style={{height:5,background:"#2A2A3E",borderRadius:3}}><div style={{height:5,background:row.t>0?(rate>=0.5?"#3B82F6":"#F59E0B"):"#475569",borderRadius:3,width:Math.min(row.t>0?rate/(DE/DAYS)*100:50,100)+"%"}}/></div>
+              <span style={{color:"#F8FAFC",textAlign:"right",fontWeight:600}}>{fmt(row.a)}</span>
+              <span style={{color:"#64748B",textAlign:"right"}}>{row.t>0?fmt(row.t):"-"}</span>
+              <span style={{color:row.t>0?rc(rate):"#475569",textAlign:"right",fontWeight:700}}>{row.t>0?pct(rate):"-"}</span>
+              <span style={{color:"#64748B",textAlign:"right",fontSize:10}}>{row.y>0?fmt(row.y):"-"}</span>
+              <span style={{textAlign:"right",fontSize:10,color:yoyP!==null?(yoyP>=0?"#10B981":"#EF4444"):"#475569"}}>{yoyP!==null?(yoyP>=0?"+":"")+yoyP.toFixed(0)+"%":"-"}</span>
+            </div>);
+          })}
+          <div style={{display:"grid",gridTemplateColumns:"55px 1fr 65px 65px 48px 65px 48px",gap:3,padding:"8px 0 4px",borderTop:"2px solid #3B82F6",fontSize:12,fontWeight:700,color:"#60A5FA"}}>
+            <span>合計</span><span></span><span style={{textAlign:"right"}}>{fmt(A.web)}</span><span style={{textAlign:"right"}}>{fmt(T.web&&T.web.t)}</span><span style={{textAlign:"right"}}>{rpct(A.web||0,(T.web&&T.web.t)||0)}</span><span style={{textAlign:"right"}}>{fmt(T.web&&T.web.y)}</span><span></span>
+          </div>
+        </div>
+      </div>}
+      {tab==="ads"&&<div>
+        {MKT.length===0?<div style={{background:"#1E1E2E",borderRadius:12,padding:"24px 28px",border:"1px solid #2A2A3E",textAlign:"center",color:"#64748B"}}>
+          <div style={{fontSize:14,fontWeight:700,marginBottom:6}}>本月廣告資料尚未匯入</div>
+          <div style={{fontSize:11}}>請等待 FB / META / GA / LINE 廣告日報匯入後查看。</div>
+        </div>:<React.Fragment><div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:16}}>
+          {MKT.map(function(m,i){return(<div key={i} style={{background:"#1E1E2E",borderRadius:12,padding:"14px 18px",border:"1px solid #2A2A3E"}}>
+            <div style={{color:"#94A3B8",fontSize:11,fontWeight:600,marginBottom:6}}>{m.n+" 廣告"}</div>
+            <div style={{fontSize:26,fontWeight:800,color:m.ac>=0.55?"#10B981":"#F59E0B"}}>{pct(m.ac)}</div>
+            <div style={{color:"#475569",fontSize:10}}>GA收益達標</div>
+            <div style={{color:"#94A3B8",fontSize:12,marginTop:4}}>{fmt(m.rev)+" / "+fmt(m.tgtRev)}</div>
+            {m.roas>0&&<div style={{color:"#64748B",fontSize:10}}>{"ROAS "+m.roas.toFixed(2)}</div>}
+          </div>);})}
+        </div>
+        <div style={{background:"#1E1E2E",borderRadius:12,padding:"16px 20px",border:"1px solid #2A2A3E"}}>
+          <div style={{fontSize:14,fontWeight:700,color:"#94A3B8",marginBottom:10}}>廣告渠道明細</div>
+          <div style={{display:"grid",gridTemplateColumns:"82px 24px 55px 55px 55px 40px 60px 55px 46px 34px",gap:2,padding:"5px 0",borderBottom:"2px solid #2A2A3E",fontSize:8,color:"#475569",fontWeight:700}}>
+            <span>渠道</span><span>市場</span><span style={{textAlign:"right"}}>花費</span><span style={{textAlign:"right"}}>目標預算</span><span style={{textAlign:"right"}}>調整預算</span><span style={{textAlign:"right"}}>ROAS</span><span style={{textAlign:"right"}}>GA收益</span><span style={{textAlign:"right"}}>目標收益</span><span style={{textAlign:"right"}}>GA達成</span><span style={{textAlign:"right"}}>新訪</span>
+          </div>
+          {ADS.map(function(ad,i){var ok=ad.AC>=0.55;return(<div key={i} style={{display:"grid",gridTemplateColumns:"82px 24px 55px 55px 55px 40px 60px 55px 46px 34px",gap:2,padding:"4px 0",borderBottom:"1px solid #1a1a2e",fontSize:10,alignItems:"center"}}>
+            <span style={{color:"#CBD5E1",fontWeight:600,fontFamily:"monospace",fontSize:9}}>{ad.n}</span>
+            <span style={{color:"#475569",fontSize:8}}>{ad.m}</span>
+            <span style={{color:"#94A3B8",textAlign:"right"}}>{fmt(ad.L)}</span>
+            <span style={{color:"#475569",textAlign:"right"}}>{fmt(ad.G)}</span>
+            <span style={{color:ad.H!==ad.G?"#F59E0B":"#475569",textAlign:"right"}}>{fmt(ad.H)}</span>
+            <span style={{color:ad.W>=3.5?"#10B981":ad.W>=2.5?"#F59E0B":"#EF4444",textAlign:"right",fontWeight:700}}>{ad.W<50?ad.W.toFixed(1):"-"}</span>
+            <span style={{color:"#94A3B8",textAlign:"right"}}>{fmt(ad.Tv)}</span>
+            <span style={{color:"#475569",textAlign:"right"}}>{fmt(ad.I)}</span>
+            <span style={{color:ok?"#10B981":"#F59E0B",textAlign:"right",fontWeight:700}}>{pct(ad.AC)}</span>
+            <span style={{color:ad.Z>0?"#94A3B8":"#475569",textAlign:"right"}}>{ad.Z>0?pct(ad.Z):"-"}</span>
+          </div>);})}
+        </div></React.Fragment>}
+      </div>}
+      {tab==="insights"&&<div style={{display:"flex",flexDirection:"column",gap:12}}>
+        {INSIGHTS.length===0?<div style={{background:"#1E1E2E",borderRadius:12,padding:"24px 28px",border:"1px solid #2A2A3E",textAlign:"center",color:"#64748B"}}>
+          <div style={{fontSize:14,fontWeight:700,marginBottom:6}}>本月未提供優化建議</div>
+        </div>:INSIGHTS.map(function(x,i){return(<div key={i} style={{background:"#1E1E2E",borderRadius:12,padding:"14px 18px",border:"1px solid #2A2A3E",borderLeft:"3px solid "+x.c}}>
+          <div style={{fontSize:13,fontWeight:700,color:"#F8FAFC",marginBottom:6}}>{x.t}</div>
+          <div style={{fontSize:12,color:"#94A3B8",lineHeight:1.6}}>{x.b}</div>
+        </div>);})}
+      </div>}
+      {tab==="ga4"&&<div style={{display:"flex",flexDirection:"column",gap:14}}>
+        {WEB_ANALYTICS?(function(){
+          var W=WEB_ANALYTICS;var TT=W.totals||{};
+          var topSources=(W.sources||[]).slice(0,12);
+          var ctry=(W.countries||[]).slice(0,6);
+          var devs=(W.devices||[]);
+          var items=(W.items_rev||[]).slice(0,10);
+          var pages=(W.pages||[]).slice(0,10);
+          var dauData=(W.dau||[]).map(function(v,i){return{day:String(i+1),dau:v,nu:(W.new_users_daily||[])[i]||0};});
+          var bestSrc=topSources.slice().sort(function(a,b){return (b.cvr||0)-(a.cvr||0);})[0];
+          var worstSrc=topSources.slice().sort(function(a,b){return (a.cvr||0)-(b.cvr||0);})[0];
+          var mob=devs.filter(function(d){return d.n==="mobile";})[0];
+          var dsk=devs.filter(function(d){return d.n==="desktop";})[0];
+          return (<React.Fragment>
+            <div style={{background:"linear-gradient(135deg,#1e293b,#0f172a)",borderRadius:14,padding:"14px 20px",border:"1px solid #334155"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                <div style={{color:"#94A3B8",fontSize:11,fontWeight:600}}>{"GA4 流量總覽｜"+W.period+"｜更新至 "+W.updated}</div>
+                <div style={{color:"#60A5FA",fontSize:10}}>{"資料來源: Google Analytics 4"}</div>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:10}}>
+                {[
+                  {l:"工作階段",v:fmt(TT.sessions),s:"DAU "+fmt(TT.dau_avg)+"/日"},
+                  {l:"新使用者",v:fmt(TT.new_users),s:fmt(TT.new_users_avg)+"/日"},
+                  {l:"交易",v:fmt(TT.transactions),s:"AOV "+fmt(TT.aov)},
+                  {l:"收益",v:fmt(TT.revenue),s:"GA4 (TW)"},
+                  {l:"整體 CVR",v:((TT.cvr_overall||0)*100).toFixed(2)+"%",s:(TT.cvr_overall||0)>=0.012?"健康":"待提升"},
+                  {l:"平均互動",v:((TT.avg_eng_time||0)).toFixed(0)+"s",s:(TT.avg_eng_time||0)>=120?"高":"中"}
+                ].map(function(k,i){return (<div key={i} style={{background:"rgba(15,23,42,0.6)",borderRadius:10,padding:"10px 12px",border:"1px solid #1e3a5f"}}>
+                  <div style={{color:"#64748B",fontSize:10,fontWeight:600,marginBottom:4}}>{k.l}</div>
+                  <div style={{color:"#F8FAFC",fontSize:18,fontWeight:800}}>{k.v}</div>
+                  <div style={{color:"#475569",fontSize:9,marginTop:2}}>{k.s}</div>
+                </div>);})}
+              </div>
+            </div>
+            <div style={{background:"#1E1E2E",borderRadius:12,padding:"16px 20px",border:"1px solid #2A2A3E"}}>
+              <div style={{fontSize:14,fontWeight:700,color:"#94A3B8",marginBottom:10}}>每日活躍/新使用者趨勢</div>
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={dauData} barGap={2}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#2A2A3E"/>
+                  <XAxis dataKey="day" tick={{fontSize:9,fill:"#64748B"}}/>
+                  <YAxis tick={{fontSize:9,fill:"#64748B"}}/>
+                  <Tooltip contentStyle={{background:"#1E1E2E",border:"1px solid #3B82F6",borderRadius:8,fontSize:11}}/>
+                  <Legend wrapperStyle={{fontSize:10}}/>
+                  <Bar dataKey="dau" name="DAU" fill="#3B82F6" radius={[2,2,0,0]}/>
+                  <Bar dataKey="nu" name="新使用者" fill="#10B981" radius={[2,2,0,0]}/>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <div style={{background:"#1E1E2E",borderRadius:12,padding:"16px 20px",border:"1px solid #2A2A3E"}}>
+              <div style={{fontSize:14,fontWeight:700,color:"#94A3B8",marginBottom:10}}>流量來源排行（依收益）</div>
+              <div style={{display:"grid",gridTemplateColumns:"160px 70px 60px 60px 60px 70px 60px",gap:4,padding:"5px 0",borderBottom:"2px solid #2A2A3E",fontSize:9,color:"#475569",fontWeight:700}}>
+                <span>來源/媒介</span><span style={{textAlign:"right"}}>工作階段</span><span style={{textAlign:"right"}}>新訪</span><span style={{textAlign:"right"}}>停留</span><span style={{textAlign:"right"}}>交易</span><span style={{textAlign:"right"}}>收益</span><span style={{textAlign:"right"}}>CVR</span>
+              </div>
+              {topSources.map(function(s,i){
+                var cvrColor=s.cvr>=0.06?"#10B981":s.cvr>=0.04?"#F59E0B":"#EF4444";
+                return (<div key={i} style={{display:"grid",gridTemplateColumns:"160px 70px 60px 60px 60px 70px 60px",gap:4,padding:"4px 0",borderBottom:"1px solid #1a1a2e",fontSize:11,alignItems:"center"}}>
+                  <span style={{color:"#CBD5E1",fontFamily:"monospace",fontSize:10,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.n}</span>
+                  <span style={{color:"#94A3B8",textAlign:"right"}}>{fmt(s.ses)}</span>
+                  <span style={{color:"#64748B",textAlign:"right"}}>{fmt(s.nu)}</span>
+                  <span style={{color:"#64748B",textAlign:"right"}}>{s.aet?s.aet.toFixed(0)+"s":"-"}</span>
+                  <span style={{color:"#94A3B8",textAlign:"right"}}>{fmt(s.tx)}</span>
+                  <span style={{color:"#F8FAFC",textAlign:"right",fontWeight:700}}>{fmt(s.rev)}</span>
+                  <span style={{color:cvrColor,textAlign:"right",fontWeight:700}}>{(s.cvr*100).toFixed(2)+"%"}</span>
+                </div>);
+              })}
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
+              {devs.map(function(dv,i){
+                var rOverall=dv.rate_overall||0;var color=rOverall>=0.02?"#10B981":rOverall>=0.01?"#F59E0B":"#EF4444";
+                var funnelStages=[{n:"瀏覽商品",r:dv.r_view||0},{n:"加入購物車",r:dv.r_cart||0},{n:"進入結帳",r:dv.r_chk||0},{n:"完成付款",r:dv.r_pay||0}];
+                return (<div key={i} style={{background:"#1E1E2E",borderRadius:12,padding:"14px 16px",border:"1px solid #2A2A3E"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
+                    <div style={{color:"#94A3B8",fontSize:11,fontWeight:700,textTransform:"uppercase"}}>{dv.n}</div>
+                    <div style={{color:color,fontSize:13,fontWeight:800}}>{(rOverall*100).toFixed(2)+"%"}</div>
+                  </div>
+                  <div style={{color:"#64748B",fontSize:10,marginBottom:8}}>{fmt(dv.ss)+" 工作階段 → "+fmt(dv.pu)+" 購買"}</div>
+                  {funnelStages.map(function(st,j){
+                    var bad=(st.n==="進入結帳"&&dv.n==="mobile"&&st.r<0.36);
+                    return (<div key={j} style={{display:"grid",gridTemplateColumns:"66px 1fr 42px",gap:6,padding:"2px 0",alignItems:"center"}}>
+                      <span style={{color:"#94A3B8",fontSize:9}}>{st.n}</span>
+                      <div style={{height:5,background:"#2A2A3E",borderRadius:3,overflow:"hidden"}}><div style={{height:5,width:Math.min(st.r*100,100)+"%",background:bad?"#EF4444":(st.r>=0.5?"#10B981":st.r>=0.3?"#3B82F6":"#F59E0B")}}/></div>
+                      <span style={{color:bad?"#EF4444":"#CBD5E1",textAlign:"right",fontSize:10,fontWeight:700}}>{(st.r*100).toFixed(1)+"%"}</span>
+                    </div>);
+                  })}
+                </div>);
+              })}
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1.2fr 1fr",gap:10}}>
+              <div style={{background:"#1E1E2E",borderRadius:12,padding:"14px 18px",border:"1px solid #2A2A3E"}}>
+                <div style={{fontSize:13,fontWeight:700,color:"#94A3B8",marginBottom:8}}>國家別貢獻 (Top 6)</div>
+                <div style={{display:"grid",gridTemplateColumns:"95px 1fr 60px 50px 60px",gap:4,padding:"5px 0",borderBottom:"2px solid #2A2A3E",fontSize:9,color:"#475569",fontWeight:700}}>
+                  <span>國家</span><span>貢獻比</span><span style={{textAlign:"right"}}>收益</span><span style={{textAlign:"right"}}>KEV%</span><span style={{textAlign:"right"}}>停留</span>
+                </div>
+                {(function(){
+                  var totalRev=ctry.reduce(function(a,b){return a+(b.rev||0);},0)||1;
+                  return ctry.map(function(c,i){
+                    var p=(c.rev||0)/totalRev;
+                    return(<div key={i} style={{display:"grid",gridTemplateColumns:"95px 1fr 60px 50px 60px",gap:4,padding:"4px 0",borderBottom:"1px solid #1a1a2e",fontSize:11,alignItems:"center"}}>
+                      <span style={{color:"#CBD5E1",fontSize:10}}>{c.n}</span>
+                      <div style={{height:5,background:"#2A2A3E",borderRadius:3,overflow:"hidden"}}><div style={{height:5,width:(p*100)+"%",background:"#3B82F6"}}/></div>
+                      <span style={{color:"#F8FAFC",textAlign:"right",fontWeight:700,fontSize:10}}>{fmt(c.rev)}</span>
+                      <span style={{color:(c.kev_rate||0)>=0.1?"#10B981":"#94A3B8",textAlign:"right",fontSize:10}}>{((c.kev_rate||0)*100).toFixed(1)+"%"}</span>
+                      <span style={{color:"#64748B",textAlign:"right",fontSize:10}}>{(c.aet||0).toFixed(0)+"s"}</span>
+                    </div>);
+                  });
+                })()}
+              </div>
+              <div style={{background:"#1E1E2E",borderRadius:12,padding:"14px 18px",border:"1px solid #2A2A3E"}}>
+                <div style={{fontSize:13,fontWeight:700,color:"#94A3B8",marginBottom:8}}>裝置別訂單份額</div>
+                <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                  {(function(){
+                    var totalPu=devs.reduce(function(a,b){return a+(b.pu||0);},0)||1;
+                    return devs.map(function(d,i){
+                      var share=(d.pu||0)/totalPu;
+                      return (<div key={i} style={{padding:"6px 10px",background:"#15151f",borderRadius:8,border:"1px solid #1a1a2e"}}>
+                        <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                          <span style={{color:"#CBD5E1",fontSize:11,fontWeight:600,textTransform:"capitalize"}}>{d.n}</span>
+                          <span style={{color:"#60A5FA",fontSize:11,fontWeight:700}}>{(share*100).toFixed(1)+"% 訂單"}</span>
+                        </div>
+                        <div style={{fontSize:9,color:"#64748B"}}>{fmt(d.ss)+" 工作階段、"+fmt(d.pu)+" 購買、CVR "+((d.rate_overall||0)*100).toFixed(2)+"%"}</div>
+                      </div>);
+                    });
+                  })()}
+                </div>
+              </div>
+            </div>
+            <div style={{background:"#1E1E2E",borderRadius:12,padding:"16px 20px",border:"1px solid #2A2A3E"}}>
+              <div style={{fontSize:14,fontWeight:700,color:"#94A3B8",marginBottom:10}}>熱賣商品 Top 10（依 GA4 收益）</div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 55px 50px 50px 70px 55px",gap:4,padding:"5px 0",borderBottom:"2px solid #2A2A3E",fontSize:9,color:"#475569",fontWeight:700}}>
+                <span>商品名稱</span><span style={{textAlign:"right"}}>檢視</span><span style={{textAlign:"right"}}>加入</span><span style={{textAlign:"right"}}>購買</span><span style={{textAlign:"right"}}>收益</span><span style={{textAlign:"right"}}>跳出率</span>
+              </div>
+              {items.map(function(it,i){
+                var br=it.br||0;var brColor=br<=0.12?"#10B981":br<=0.18?"#F59E0B":"#EF4444";
+                return (<div key={i} style={{display:"grid",gridTemplateColumns:"1fr 55px 50px 50px 70px 55px",gap:4,padding:"4px 0",borderBottom:"1px solid #1a1a2e",fontSize:10,alignItems:"center"}}>
+                  <span style={{color:"#CBD5E1",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontSize:10}}>{(i+1)+". "+it.n}</span>
+                  <span style={{color:"#94A3B8",textAlign:"right"}}>{fmt(it.v)}</span>
+                  <span style={{color:"#94A3B8",textAlign:"right"}}>{fmt(it.a)}</span>
+                  <span style={{color:"#94A3B8",textAlign:"right"}}>{fmt(it.p)}</span>
+                  <span style={{color:"#F8FAFC",textAlign:"right",fontWeight:700}}>{fmt(it.rev)}</span>
+                  <span style={{color:brColor,textAlign:"right",fontWeight:700}}>{(br*100).toFixed(1)+"%"}</span>
+                </div>);
+              })}
+            </div>
+            <div style={{background:"#1E1E2E",borderRadius:12,padding:"16px 20px",border:"1px solid #2A2A3E"}}>
+              <div style={{fontSize:14,fontWeight:700,color:"#94A3B8",marginBottom:10}}>熱門頁面 Top 10（依瀏覽次數）</div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 70px 60px 60px",gap:4,padding:"5px 0",borderBottom:"2px solid #2A2A3E",fontSize:9,color:"#475569",fontWeight:700}}>
+                <span>頁面標題</span><span style={{textAlign:"right"}}>檢視</span><span style={{textAlign:"right"}}>使用者</span><span style={{textAlign:"right"}}>停留</span>
+              </div>
+              {pages.map(function(pg,i){
+                return (<div key={i} style={{display:"grid",gridTemplateColumns:"1fr 70px 60px 60px",gap:4,padding:"4px 0",borderBottom:"1px solid #1a1a2e",fontSize:10,alignItems:"center"}}>
+                  <span style={{color:"#CBD5E1",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{(i+1)+". "+pg.n}</span>
+                  <span style={{color:"#94A3B8",textAlign:"right"}}>{fmt(pg.v)}</span>
+                  <span style={{color:"#64748B",textAlign:"right"}}>{fmt(pg.au)}</span>
+                  <span style={{color:"#64748B",textAlign:"right"}}>{(pg.aet||0).toFixed(0)+"s"}</span>
+                </div>);
+              })}
+            </div>
+            <div style={{background:"linear-gradient(135deg,#1e293b,#0f172a)",borderRadius:14,padding:"16px 22px",border:"1px solid #334155"}}>
+              <div style={{fontSize:14,fontWeight:700,color:"#60A5FA",marginBottom:10}}>GA4 優化建議（基於本期數據自動生成）</div>
+              <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                {[
+                  mob&&mob.r_chk<0.36?{c:"#EF4444",t:"行動結帳漏斗 "+(mob.r_chk*100).toFixed(1)+"% 是首要破口",b:"行動 "+fmt(mob.ss)+" 工作階段、整體 CVR 僅 "+(mob.rate_overall*100).toFixed(2)+"%（桌機 "+(dsk?(dsk.rate_overall*100).toFixed(2):"-")+"%）。若 checkout→pay 從 "+(mob.r_chk*100).toFixed(1)+"% 提升至 36%，預估可帶 +"+fmt(Math.round(mob.ss*(0.36-mob.r_chk)*mob.r_pay))+" 筆訂單 × AOV "+fmt(TT.aov)+" ≈ "+fmt(Math.round(mob.ss*(0.36-mob.r_chk)*mob.r_pay*TT.aov))+"。優先優化：簡化付款步驟、預填運費、優化載入速度。"}:null,
+                  bestSrc?{c:"#10B981",t:"最高 CVR 來源："+bestSrc.n+" "+(bestSrc.cvr*100).toFixed(2)+"%（建議加碼）",b:bestSrc.n+" 工作階段 "+fmt(bestSrc.ses)+"、收益 "+fmt(bestSrc.rev)+"、AOV "+fmt(Math.round(bestSrc.rev/Math.max(bestSrc.tx,1)))+"。CVR 為全來源最高，代表受眾精準度高，加 30-50% 預算邊際 ROAS 預估仍可維持。"}:null,
+                  worstSrc&&wors
