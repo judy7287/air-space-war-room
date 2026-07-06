@@ -36,7 +36,7 @@
 <div id="app"></div>
 <script>
 (function(){
-  var PW_HASH = '0348606cfca0c5eeff038e34dc7908fe6e9b71a0'; // sha1("airspace-salt" + password)
+  var PW_HASH = '0348606cfca0c5eeff038e34dc7908fe6e9b71a0';
   function sha1(msg){
     function rotl(n,s){return (n<<s)|(n>>>(32-s));}
     var msgBytes = unescape(encodeURIComponent(msg));
@@ -134,6 +134,8 @@ var MONTHS={
 "2026-07":{"label":"2026年7月","days":31,"DE":3,"note":"⚠️ 2026-07-03 執行｜DE=3。台灣(官網/門市/蝦皮/亞馬遜/樂天)連續3天實績均為0，全通路日報表7月分頁TW區塊持續空白，尚待業務回報。海外馬來+國際站已計入7/1-7/3實績：馬來全通路 986,818(官網349,279/門市610,779/蝦皮+TikTok 26,760)、國際站 148,825。⚠️ 來源檔7/4~7/31欄位仍顯示樣板殘值(非當日實績,經比對與影響公式判斷為預先帶入)，未採用，待逐日確認後再補。「每月廣告成效紀錄表」尚無7月分頁，ADS/MKT暫缺。月度目標(2026目標+達成率JUL欄)：全通路1.61億、官網4,600萬、蝦皮1,000萬、門市8,544萬。","DD_WEB":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"DD_SP":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"DD_ST":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"A":{"total":1135643,"store":0,"online":0,"web":0,"shopee":0,"amazon":0,"rakuten":0,"intl":148825,"my_total":986818,"my_web":349279,"my_store":610779,"my_shopee":26760,"w_as":0,"w_lady":0,"w_aplus":0,"w_ca":0,"w_swim":0,"web_tw":0,"web_hk":0},"T":{"web":{"t":46000000,"y":42630729},"shopee":{"t":10000000,"y":9389128},"intl":{"t":4100000,"y":3816627},"rakuten":{"t":3000000,"y":2745042},"amazon":{"t":1300000,"y":0},"store":{"t":85441292,"y":0},"my_web":{"t":5100000,"y":4821893},"my_store":{"t":5362500,"y":0},"my_shopee":{"t":350000,"y":142404},"all":{"t":160953792,"y":0},"as":{"t":20400000,"y":0},"lady":{"t":11000000,"y":0},"plus":{"t":6700000,"y":0},"ca":{"t":7500000,"y":0}},"EVENTS":{"7":["蝦皮 7.7 促銷"],"25":["蝦皮 7.25 促銷"],"31":["月末收官衝刺"]},"ADS":[],"MKT":[],"insights":[{"c":"#6B7280","t":"7/1-7/3 台灣連續3天均無回報，僅海外(馬來/國際站)有進帳","b":"逐日核對確認：全通路日報表7月分頁「網路業績」欄的每日數字實際上是馬來西亞全通路+國際站的加總透傳，台灣官網/門市/蝦皮/亞馬遜/樂天連續3天(7/1-7/3)皆為0，尚待業務回報。7/4起分頁數字經比對疑似為樣板殘值，暫不採用。"},{"c":"#3B82F6","t":"海外3日累計：馬來全通路 986,818、國際站 148,825","b":"馬來官網 349,279、馬來門市 610,779、馬來蝦皮+TikTok 26,760，合計馬來全通路 986,818；國際站 148,825。台灣區塊尚無資料可比較達成率。"},{"c":"#3B82F6","t":"6月收官 98.35% (1.6434億/1.6709億)｜門市/蝦皮雙超標","b":"6月全月實績確認：全通路 164,337,005 / 167,086,836 = 98.35%。門市 100.85%、蝦皮 108.64% 超標；官網 95.92% 接近滿標。"},{"c":"#F59E0B","t":"6月缺口延續：Amazon 40.56%、樂天 72.90%、馬來門市 82.23%","b":"Amazon 243,343/600,000 = 40.56%；樂天 1,822,512/2,500,000 = 72.90%；馬來門市 3,916,187/4,762,500 = 82.23%，7月同為觀察重點。"},{"c":"#10B981","t":"6月廣告結算：FB/HK ROAS 5.70x、FB/AS ROAS 5.19x 全頻道最佳","b":"依「每月廣告成效紀錄表」6月最終結算：FB HK ROAS 5.70x（去年同期 4.82x）、FB AS ROAS 5.19x（去年同期 4.22x）、Google TW品牌 ROAS 196.88x、LINE/AS ROAS 15.44x、rtbhouse ROAS 3.50x。7月關鍵檔期：蝦皮 7.7／7.25 雙檔、夏季換季出清。"}]}
 };
 var DEFAULT_MONTH="2026-07";
+
+
 /* ====== DATA_BLOCK_END ====== */
 
 /* ====== RENDER_BLOCK_START — pure UI, do not regenerate ====== */
@@ -498,4 +500,35 @@ function Dashboard(){
                 {[
                   mob&&mob.r_chk<0.36?{c:"#EF4444",t:"行動結帳漏斗 "+(mob.r_chk*100).toFixed(1)+"% 是首要破口",b:"行動 "+fmt(mob.ss)+" 工作階段、整體 CVR 僅 "+(mob.rate_overall*100).toFixed(2)+"%（桌機 "+(dsk?(dsk.rate_overall*100).toFixed(2):"-")+"%）。若 checkout→pay 從 "+(mob.r_chk*100).toFixed(1)+"% 提升至 36%，預估可帶 +"+fmt(Math.round(mob.ss*(0.36-mob.r_chk)*mob.r_pay))+" 筆訂單 × AOV "+fmt(TT.aov)+" ≈ "+fmt(Math.round(mob.ss*(0.36-mob.r_chk)*mob.r_pay*TT.aov))+"。優先優化：簡化付款步驟、預填運費、優化載入速度。"}:null,
                   bestSrc?{c:"#10B981",t:"最高 CVR 來源："+bestSrc.n+" "+(bestSrc.cvr*100).toFixed(2)+"%（建議加碼）",b:bestSrc.n+" 工作階段 "+fmt(bestSrc.ses)+"、收益 "+fmt(bestSrc.rev)+"、AOV "+fmt(Math.round(bestSrc.rev/Math.max(bestSrc.tx,1)))+"。CVR 為全來源最高，代表受眾精準度高，加 30-50% 預算邊際 ROAS 預估仍可維持。"}:null,
-                  worstSrc&&wors
+                  worstSrc&&worstSrc.cvr<0.04?{c:"#F59E0B",t:"低效流量來源："+worstSrc.n+" CVR 僅 "+(worstSrc.cvr*100).toFixed(2)+"%",b:worstSrc.n+" 工作階段 "+fmt(worstSrc.ses)+"、收益 "+fmt(worstSrc.rev)+"。CVR 低於整體均值，建議檢視素材/受眾/落地頁。可考慮 A/B test 新素材或關閉低效廣告群組。"}:null,
+                  (function(){var hk=ctry.filter(function(x){return x.n==="Hong Kong";})[0];var tot=ctry.reduce(function(a,b){return a+(b.rev||0);},0)||1;if(!hk)return null;return {c:"#3B82F6",t:"港澳收益佔比 "+((hk.rev||0)/tot*100).toFixed(1)+"%｜KEV "+(hk.kev_rate*100).toFixed(1)+"%",b:"港澳停留時間 "+hk.aet.toFixed(0)+"s 高於台灣均值，KEV 率 "+(hk.kev_rate*100).toFixed(1)+"%。建議 fb/hk 廣告繼續加碼，針對港澳獨家促銷頁面強化「免運/合併運費」訴求。"};})(),
+                  items[0]?{c:"#10B981",t:"商品冠軍："+items[0].n.substring(0,28)+(items[0].n.length>28?"…":""),b:"檢視 "+fmt(items[0].v)+"、加入 "+fmt(items[0].a)+"、購買 "+fmt(items[0].p)+"、收益 "+fmt(items[0].rev)+"、跳出 "+(items[0].br*100).toFixed(1)+"%。檢視→加入轉換 "+((items[0].a/Math.max(items[0].v,1))*100).toFixed(1)+"%，加入→購買 "+((items[0].p/Math.max(items[0].a,1))*100).toFixed(1)+"%。建議延伸同系列商品上架、母親節 + 525 雙五持續主打。"}:null,
+                  (function(){var ig=topSources.filter(function(x){return /ig/i.test(x.n);})[0];return ig?{c:"#3B82F6",t:"IG 流量 CVR "+(ig.cvr*100).toFixed(2)+"% (高於整體 "+((ig.cvr/Math.max(TT.cvr_overall,0.0001)-1)*100).toFixed(0)+"%)",b:ig.n+" 工作階段 "+fmt(ig.ses)+"、收益 "+fmt(ig.rev)+"。IG 內容流量品質佳，建議加強 reels/穿搭內容產出頻次，並設定 IG shopping tag 串接商品落地頁。"}:null;})(),
+                  {c:"#6B7280",t:"本期 GA4 涵蓋 "+(W.dau||[]).length+" 天｜AOV "+fmt(TT.aov)+"｜整體 CVR "+((TT.cvr_overall||0)*100).toFixed(2)+"%",b:"資料更新至 "+W.updated+"；建議週一例會優先檢視「裝置漏斗」與「來源 CVR 排行」兩張表，調整本週素材與預算分配。"}
+                ].filter(Boolean).map(function(x,i){return (<div key={i} style={{background:"rgba(15,23,42,0.6)",borderRadius:10,padding:"12px 14px",border:"1px solid #1e3a5f",borderLeft:"3px solid "+x.c}}>
+                  <div style={{fontSize:12,fontWeight:700,color:"#F8FAFC",marginBottom:4}}>{x.t}</div>
+                  <div style={{fontSize:11,color:"#94A3B8",lineHeight:1.6}}>{x.b}</div>
+                </div>);})}
+              </div>
+            </div>
+          </React.Fragment>);
+        })():(<div style={{background:"#1E1E2E",borderRadius:12,padding:"24px 28px",border:"1px solid #2A2A3E",textAlign:"center",color:"#64748B"}}>
+          <div style={{fontSize:14,fontWeight:700,marginBottom:6}}>本月份尚無 GA4 資料</div>
+          <div style={{fontSize:11}}>WEB_ANALYTICS 區塊未提供。請串接 GA4 報表後即可在此頁簽檢視。</div>
+        </div>)}
+      </div>}
+      </div>
+    </div>
+  );
+}
+
+/* ====== RENDER_BLOCK_END ====== */
+
+ReactDOM.createRoot(document.getElementById('app')).render(<Dashboard/>);
+} catch(e) {
+  var errEl = document.getElementById('err');
+  if(errEl){ errEl.style.display='block'; errEl.textContent = 'RENDER ERROR: ' + e.message + '\n' + (e.stack||''); }
+}
+</script>
+</body>
+</html>
